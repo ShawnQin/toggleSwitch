@@ -12,10 +12,10 @@ close all
 clear
 clc
 
-a1list = 10:0.5:15;
+a1list = 4:0.5:15;
 sigmae = 0.1;
 tauc = 1;
-param = [15;10;2;2;0.05;tauc;sigmae];
+param = [15;10;2;2;0.03;tauc;sigmae];
 OMIGA = 20;        %system size
 NUM = 3;
 % runTime = max([20*tauc,1e3]);
@@ -235,7 +235,7 @@ end
 
 t = 0;
 Ytemp = Y(1,:);
-time = 0;
+time = [];
 %implementation of Extrande algorithm
 LookTime = min(100*dt,totTime - t);  % look achead time
 while (t < totTime)
@@ -249,9 +249,9 @@ while (t < totTime)
     else
         t = t + tau;
         if(floor(t/dt) == 0)
-            currXe = 1+ Xe(1)/dt*t;
+            currXe = Xe(1)/dt*t;
         else
-            currXe = 1+(Xe(ceil(t/dt))-Xe(floor(t/dt)))/dt*(t-ceil(t/dt)*dt);
+            currXe = (Xe(ceil(t/dt))-Xe(floor(t/dt)))/dt*(t-ceil(t/dt)*dt);
         end
         
         a = [OMIGA*a1*(a0 + (1-a0)/(1+(Ytemp(2)/OMIGA)^n1));currXe*Ytemp(1);...
@@ -259,9 +259,7 @@ while (t < totTime)
         threshold = PropBound*rand;
         if(sum(a)>= threshold)
             whihchReaction = find(cumsum(a)> threshold,1); %which reaction will fire
-            Ytemp = Ytemp + S(:,whihchReaction)';  %update number
-            Y = [Y;Ytemp];
-            time = [time;t];
+            Ytemp = Ytemp + S(:,whihchReaction)';  %update number        
         end
     end
       
