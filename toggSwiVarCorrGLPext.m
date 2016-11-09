@@ -12,7 +12,7 @@ close all
 clear
 clc
 
-a1list = 10:0.5:15;
+a1list = 4:0.5:15;
 sigmae = 0.1;
 tauc = 1;
 param = [15;10;2;2;0.05;tauc;sigmae];
@@ -59,8 +59,11 @@ for i0 = 1:length(a1list);
     flag = 0;
     while(n<N && flag<MAXTRY)
         rng('shuffle')
+        tic;
 %         [time,Y] = GillespeBasalExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
+        
         [time, Y] = ExtrandeExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
+        toc
          if(param(1)<7 ||(param(1)>=7 && Y(end,1)<saddle(i0,1) && Y(end,2)>saddle(i0,2)))
             n = n+1;
 %             dataSelect{i0,n} = Y;
@@ -127,7 +130,7 @@ save(saveFile,'a1list','meanVal1','meanVal2','variance1','variance2','corrCLE','
 %     ylabel('lag one auto correlation','FontSize',24,'FontWeight','Bold')
 %     set(gca,'LineWidth',2,'FontSize',20,'FontWeight','Bold')
 end
-function [time,Y]=GillespeBasalExt(totTime,inV,param,OMIGA,dt)
+function [timeY,Y]=GillespeBasalExt(totTime,inV,param,OMIGA,dt)
 
 %this program uses first-reaction Gillespie method to simulate the modified 
 %toggle switch model(with basal level expression rate), with extrinsic
@@ -168,12 +171,15 @@ te = dt;
 i = 1;
 j = 0;
 Ytemp = Y(1,:);
+timeY = 0;
 while(t < totTime)
     a = [OMIGA*a1*(a0 + (1-a0)/(1+(Ytemp(2)/OMIGA)^n1)); b*Ytemp(1);OMIGA*a2*(a0 + (1-a0)/(1+(Ytemp(1)/OMIGA)^n2)); b*Ytemp(2)];
     [tau,inx] = min(-1./a.*log(rand(4,1)));
     if(t+tau<te)
         Ytemp = Ytemp + S(:,inx)';  
-        t = t + tau;  
+        t = t + tau;
+        Y = [Y;Ytemp];
+        timeY = [timeY;t];
 %         time(i+1)= t;
     else
 %         a1t = a1*(1+Xe(j+1));
@@ -181,7 +187,7 @@ while(t < totTime)
         b = 1+Xe(j+1);
         j = j+1;
         time(j) = t;
-        Y(j,:) = Ytemp;  %only record part of the data
+%         Y(j,:) = Ytemp;  %only record part of the data
         t = te;
         te = te+dt;   %updata the extrinsic time point
 
