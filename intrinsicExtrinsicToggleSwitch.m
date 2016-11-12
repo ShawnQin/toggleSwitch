@@ -517,7 +517,7 @@ for j1 = 1:N_a1;
         Dc = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0;...
                 0,param(2)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA];
         Dcle = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0,0;...
-                0,param(2)*OMIGA/(1+steadyODE(j1,1)^param(4))+steadyODE(j1,2)*OMIGA,0;0,0,ss];
+                0,param(2)*OMIGA*(a0 - (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,ss];
         C1 = lyap(A,D);
         corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
         variance_theory(j1,2) = C1(2,2);
@@ -536,8 +536,8 @@ for j1 = 1:N_a1;
         
         C3 = lyap(Ac,Dc);            
         corrcoef_ext_c_theory(j1) = C3(1,2)/(sqrt(C3(1,1)*C3(2,2)));
-        variance_ext_c_theory(j1,2) = C3(2,2)/(OMIGA^2);
-        variance_ext_c_theory(j1,1) = C3(1,1)/(OMIGA^2);
+        variance_ext_c_theory(j1,2) = C3(2,2);
+        variance_ext_c_theory(j1,1) = C3(1,1);
         G3 = C3*expm(Ac');
         lagOneC_theory(j1,2) = G3(2,2)/C3(2,2);
         lagOneC_theory(j1,1) = G3(1,1)/C3(1,1);
@@ -545,8 +545,8 @@ for j1 = 1:N_a1;
         C4 = lyap(Acle,Dcle);
         corrcoef_ext_cle_theory(j1,j2) = C4(1,2)/(sqrt(C4(1,1)*C4(2,2)));
         
-        variance_ext_cle_theory(j1,j2,2) = C4(2,2)/(OMIGA^2);
-        variance_ext_cle_theory(j1,j2,1) = C4(1,1)/(OMIGA^2);
+        variance_ext_cle_theory(j1,j2,2) = C4(2,2);
+        variance_ext_cle_theory(j1,j2,1) = C4(1,1);
         G4 = C4*expm(Acle');
         lagOneCLEext_theory(j1,j2,2) = G4(2,2)/C4(2,2);
         lagOneCLEext_theory(j1,j2,1) = G4(1,1)/C4(1,1);
@@ -736,7 +736,7 @@ for j1 = 1:N_a1;
         Dc = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0;...
                 0,param(2)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA];
         Dcle = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0,0;...
-                0,param(2)*OMIGA/(1+steadyODE(j1,1)^param(4))+steadyODE(j1,2)*OMIGA,0;0,0,sigmae(j2)];
+                0,param(2)*OMIGA*(a0 + (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,sigmae(j2)];
         C1 = lyap(A,D);
         corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
         variance_theory(j1,2) = C1(2,2);
@@ -945,7 +945,7 @@ for j1 = 1:N_a1;
         Dc = [a1_list(j1)*OMIGA(j2)*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA(j2),0;...
                 0,param(2)*OMIGA(j2)*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA(j2)];
         Dcle = [a1_list(j1)*OMIGA(j2)*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA(j2),0,0;...
-                0,param(2)*OMIGA(j2)/(1+steadyODE(j1,1)^param(4))+steadyODE(j1,2)*OMIGA(j2),0;0,0,sigmae];
+                0,param(2)*OMIGA(j2)*(1 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA(j2),0;0,0,sigmae];
         
         C3 = lyap(Ac,Dc);            
         corrcoef_ext_c_theory(j1) = C3(1,2)/(sqrt(C3(1,1)*C3(2,2)));
