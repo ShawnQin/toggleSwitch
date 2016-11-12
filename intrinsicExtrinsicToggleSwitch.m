@@ -55,9 +55,9 @@ runTime = 10*tauc;
 %_________________________________________________________________________
 %this is the theoretic calculation part
 %theoretic calculation
-% extriLE_CLE_timescale(param,OMIGA,sigma,sigmae,Yini,'s');
-% extriLE_CLE_noiseAmpli(param,OMIGA,sigma,Yini,'s');
-extriLE_CLE_SysSize(param,sigmae,Yini,'p')
+extriLE_CLE_timescale(param,OMIGA,sigmae,Yini,'s');
+% extriLE_CLE_noiseAmpli(param,OMIGA,Yini,'s');
+% extriLE_CLE_SysSize(param,sigmae,Yini,'s')
 
 %_________________________________________________________________________
 
@@ -476,7 +476,7 @@ J4 = jacobian([N*a1*(a0 + (1-a0)/(1+(y/N)^n1)) - (1+E)*x;N*a2*(a0 + (1-a0)/(1+(x
 Ace = double(subs(J4,{x,y,E,a1 a2 n1 n2 a0 b N},{vec(1)*OMIGA,vec(2)*OMIGA,0,param(1),param(2),param(3),param(4),param(5),param(6),OMIGA}));
 
 end
-function extriLE_CLE_timescale(param,OMIGA,sigma,sigmae,Yini,PlotSave)
+function extriLE_CLE_timescale(param,OMIGA,sigmae,Yini,PlotSave)
 %this function comparing the correlation coefficient, variance, and lag one
 %auto correlation for LE and CLE with extrinsic noise
 % beta define different time scale of extrinsic noise
@@ -489,14 +489,14 @@ runTime = 1000;
 
 BETA = [10,1,1/10,1/100,1/1000];
 % beta = 1/param(6);
-corrcoef_theory = zeros(N_a1,1);
-corrcoef_ext_theory = zeros(N_a1,length(BETA),2);
-variance_theory = zeros(N_a1,2);
-variance_ext_theory = zeros(N_a1,length(BETA),2);
+% corrcoef_theory = zeros(N_a1,1);
+% corrcoef_ext_theory = zeros(N_a1,length(BETA),2);
+% variance_theory = zeros(N_a1,2);
+% variance_ext_theory = zeros(N_a1,length(BETA),2);
 corrcoef_ext_cle_theory = zeros(N_a1,length(BETA));
 variance_ext_cle_theory = zeros(N_a1,length(BETA),2);
-lagOneLe_theory = zeros(N_a1,2);
-lagOneLEext_theory = zeros(N_a1,length(BETA),2);
+% lagOneLe_theory = zeros(N_a1,2);
+% lagOneLEext_theory = zeros(N_a1,length(BETA),2);
 lagOneCLEext_theory = zeros(N_a1,length(BETA),2);
 variance_ext_c_theory = zeros(N_a1,2);
 corrcoef_ext_c_theory = zeros(N_a1,1);
@@ -512,27 +512,27 @@ for j1 = 1:N_a1;
         param(6) = BETA(j2);
         ss = 2*sigmae^2*BETA(j2);
         [A,Ae,Ac,Acle] = jacMatrx(param,steadyODE(j1,:),OMIGA);
-        D = [sigma(1)^2,0;0,sigma(2)^2];
-        De = [sigma(1)^2,0,0;0,sigma(2)^2,0;0,0,ss];
+%         D = [sigma(1)^2,0;0,sigma(2)^2];
+%         De = [sigma(1)^2,0,0;0,sigma(2)^2,0;0,0,ss];
         Dc = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0;...
                 0,param(2)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA];
         Dcle = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0,0;...
                 0,param(2)*OMIGA*(a0 - (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,ss];
-        C1 = lyap(A,D);
-        corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
-        variance_theory(j1,2) = C1(2,2);
-        variance_theory(j1,1) = C1(1,1);
-        G1 = C1*expm(A');
-        lagOneLe_theory(j1,2) = G1(2,2)/C1(2,2);
-        lagOneLe_theory(j1,1) = G1(1,1)/C1(1,1);
-        
-        C2 = lyap(Ae,De);
-        corrcoef_ext_theory(j1,j2) = C2(1,2)/(sqrt(C2(1,1)*C2(2,2)));
-        variance_ext_theory(j1,j2,2) = C2(2,2);
-        variance_ext_theory(j1,j2,1) = C2(1,1);
-        G2 = C2*expm(Ae');
-        lagOneLEext_theory(j1,j2,2) = G2(2,2)/C2(2,2);
-        lagOneLEext_theory(j1,j2,1) = G2(1,1)/C2(1,1);
+%         C1 = lyap(A,D);
+%         corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
+%         variance_theory(j1,2) = C1(2,2);
+%         variance_theory(j1,1) = C1(1,1);
+%         G1 = C1*expm(A');
+%         lagOneLe_theory(j1,2) = G1(2,2)/C1(2,2);
+%         lagOneLe_theory(j1,1) = G1(1,1)/C1(1,1);
+%         
+%         C2 = lyap(Ae,De);
+%         corrcoef_ext_theory(j1,j2) = C2(1,2)/(sqrt(C2(1,1)*C2(2,2)));
+%         variance_ext_theory(j1,j2,2) = C2(2,2);
+%         variance_ext_theory(j1,j2,1) = C2(1,1);
+%         G2 = C2*expm(Ae');
+%         lagOneLEext_theory(j1,j2,2) = G2(2,2)/C2(2,2);
+%         lagOneLEext_theory(j1,j2,1) = G2(1,1)/C2(1,1);
         
         C3 = lyap(Ac,Dc);            
         corrcoef_ext_c_theory(j1) = C3(1,2)/(sqrt(C3(1,1)*C3(2,2)));
@@ -556,7 +556,7 @@ end
 
 %plot the theoretic resujicolorSet = [ones(4,1)*60/256,[0;0.3;0.6;0.9],ones(4,1)*189/256];
 if strcmp(PlotSave,'p')   %plot the figure 
-colorSet = [[0;0.3;0.6;0.9],zeros(4,2)];
+colorSet = [(0:1:(length(BETA)-1))'/length(BETA),zeros(length(BETA),2)];
 figure(1)
 % plot(a1_list,corrcoef_theory,'r-','Linewidth',3)
 hold on
@@ -577,10 +577,10 @@ set(gca,'FontSize',24,'FontWeight','Bold','LineWidth',2)
 figure(2)
 % plot(a1_list,variance_theory,'r-','Linewidth',3)
 hold on
-plot(a1_list,variance_ext_c_theory(:,2)*OMIGA^2,'k-','Linewidth',3)
+plot(a1_list,variance_ext_c_theory(:,2),'k-','Linewidth',3)
 for j4 = 1:length(BETA);
 %     plot(a1_list,variance_ext_theory(:,j4),'Linewidth',3,'Color',colorSet(j4,:))
-    plot(a1_list,OMIGA^2*variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
+    plot(a1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
     
 end
 % hold off
@@ -683,7 +683,7 @@ elseif strcmp(PlotSave,'s')
 end
 
 end
-function extriLE_CLE_noiseAmpli(param,OMIGA,sigma,Yini,plotSave)
+function extriLE_CLE_noiseAmpli(param,OMIGA,Yini,plotSave)
 %this function comparing the correlation coefficient, variance, and lag one
 %auto correlation for LE and CLE with extrinsic noise
 % sigmae define diffent extrinsic noise amplitude
@@ -697,14 +697,14 @@ param(6) = 1/param(6);
 
 ss= [1e-3,1e-2,1e-1,0.25];
 sigmae = 2*ss.^2*param(6);
-corrcoef_theory = zeros(N_a1,1);
-corrcoef_ext_theory = zeros(N_a1,length(sigmae),2);
-variance_theory = zeros(N_a1,2);
-variance_ext_theory = zeros(N_a1,length(sigmae),2);
+% corrcoef_theory = zeros(N_a1,1);
+% corrcoef_ext_theory = zeros(N_a1,length(sigmae),2);
+% variance_theory = zeros(N_a1,2);
+% variance_ext_theory = zeros(N_a1,length(sigmae),2);
 corrcoef_ext_cle_theory = zeros(N_a1,1);
 variance_ext_cle_theory = zeros(N_a1,length(sigmae),2);
-lagOneLe_theory = zeros(N_a1,2);
-lagOneLEext_theory = zeros(N_a1,length(sigmae),2);
+% lagOneLe_theory = zeros(N_a1,2);
+% lagOneLEext_theory = zeros(N_a1,length(sigmae),2);
 lagOneCLEext_theory = zeros(N_a1,length(sigmae),2);
 variance_ext_c_theory = zeros(N_a1,2);
 corrcoef_ext_c_theory = zeros(N_a1,1);
@@ -731,32 +731,32 @@ for j1 = 1:N_a1;
 %         G1 = C1*expm(A');
 %         lagOneLe_theory(j1,2) = G1(2,2)/C1(2,2);
 %         lagOneLe_theory(j1,1) = G1(1,1)/C1(1,1);
-        D = [sigma(1)^2,0;0,sigma(2)^2];
-        De = [sigma(1)^2,0,0;0,sigma(2)^2,0;0,0,sigmae(j2)];
+%         D = [sigma(1)^2,0;0,sigma(2)^2];
+%         De = [sigma(1)^2,0,0;0,sigma(2)^2,0;0,0,sigmae(j2)];
         Dc = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0;...
                 0,param(2)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA];
         Dcle = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0,0;...
                 0,param(2)*OMIGA*(a0 + (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,sigmae(j2)];
-        C1 = lyap(A,D);
-        corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
-        variance_theory(j1,2) = C1(2,2);
-        variance_theory(j1,1) = C1(1,1);
-        G1 = C1*expm(A');
-        lagOneLe_theory(j1,2) = G1(2,2)/C1(2,2);
-        lagOneLe_theory(j1,1) = G1(1,1)/C1(1,1);
-        
-        C2 = lyap(Ae,De);
-        corrcoef_ext_theory(j1,j2) = C2(1,2)/(sqrt(C2(1,1)*C2(2,2)));
-        variance_ext_theory(j1,j2,2) = C2(2,2);
-        variance_ext_theory(j1,j2,1) = C2(1,1);
-        G2 = C2*expm(Ae');
-        lagOneLEext_theory(j1,j2,2) = G2(2,2)/C2(2,2);
-        lagOneLEext_theory(j1,j2,1) = G2(1,1)/C2(1,1);
+%         C1 = lyap(A,D);
+%         corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
+%         variance_theory(j1,2) = C1(2,2);
+%         variance_theory(j1,1) = C1(1,1);
+%         G1 = C1*expm(A');
+%         lagOneLe_theory(j1,2) = G1(2,2)/C1(2,2);
+%         lagOneLe_theory(j1,1) = G1(1,1)/C1(1,1);
+%         
+%         C2 = lyap(Ae,De);
+%         corrcoef_ext_theory(j1,j2) = C2(1,2)/(sqrt(C2(1,1)*C2(2,2)));
+%         variance_ext_theory(j1,j2,2) = C2(2,2);
+%         variance_ext_theory(j1,j2,1) = C2(1,1);
+%         G2 = C2*expm(Ae');
+%         lagOneLEext_theory(j1,j2,2) = G2(2,2)/C2(2,2);
+%         lagOneLEext_theory(j1,j2,1) = G2(1,1)/C2(1,1);
         
         C3 = lyap(Ac,Dc);            
         corrcoef_ext_c_theory(j1) = C3(1,2)/(sqrt(C3(1,1)*C3(2,2)));
-        variance_ext_c_theory(j1,2) = C3(2,2)/(OMIGA^2);
-        variance_ext_c_theory(j1,1) = C3(1,1)/(OMIGA^2);
+        variance_ext_c_theory(j1,2) = C3(2,2);
+        variance_ext_c_theory(j1,1) = C3(1,1);
         G3 = C3*expm(Ac');
         lagOneC_theory(j1,2) = G3(2,2)/C3(2,2);
         lagOneC_theory(j1,1) = G3(1,1)/C3(1,1);
@@ -764,8 +764,8 @@ for j1 = 1:N_a1;
         C4 = lyap(Acle,Dcle);
         corrcoef_ext_cle_theory(j1,j2) = C4(1,2)/(sqrt(C4(1,1)*C4(2,2)));
         
-        variance_ext_cle_theory(j1,j2,2) = C4(2,2)/(OMIGA^2);
-        variance_ext_cle_theory(j1,j2,1) = C4(1,1)/(OMIGA^2);
+        variance_ext_cle_theory(j1,j2,2) = C4(2,2);
+        variance_ext_cle_theory(j1,j2,1) = C4(1,1);
         G4 = C4*expm(Acle');
         lagOneCLEext_theory(j1,j2,2) = G4(2,2)/C4(2,2);
         lagOneCLEext_theory(j1,j2,1) = G4(1,1)/C4(1,1);    
@@ -993,7 +993,7 @@ hold on
 plot(a1_list,variance_ext_c_theory(:,2,2),'k-','Linewidth',3)
 for j4 = 1:length(OMIGA);
 %     plot(a1_list,variance_ext_theory(:,j4),'Linewidth',3,'Color',colorSet(j4,:))
-    plot(a1_list,OMIGA(j4)^2*variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
+    plot(a1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
 %     plot(a1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
     
 end
