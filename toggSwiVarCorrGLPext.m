@@ -12,14 +12,14 @@ close all
 clear
 clc
 
-a1list = 4:0.5:15;
-sigmae = 0.1;
+a1list = 10:0.5:15;
+sigmae = 0.25;
 tauc = 1;
-param = [15;10;2;2;0.05;tauc;sigmae];
+param = [15;10;2;2;0.03;tauc;sigmae];
 OMIGA = 20;        %system size
 NUM = 3;
 % runTime = max([20*tauc,1e3]);
-runTime = 50;
+runTime = 200;
 
 varCorrGLPext(param,a1list,NUM,runTime,OMIGA);
 end
@@ -63,6 +63,7 @@ for i0 = 1:length(a1list);
 %         [time,Y] = GillespeBasalExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
         
         [time, Y] = ExtrandeExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
+        plot(time,Y)
         toc
          if(param(1)<7 ||(param(1)>=7 && Y(end,1)<saddle(i0,1) && Y(end,2)>saddle(i0,2)))
             n = n+1;
