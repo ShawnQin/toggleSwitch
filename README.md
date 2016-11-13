@@ -11,6 +11,8 @@ Here is the brief description of what this program did. For the _toggle switch _
 
 `toggTimeDetrendExtri.m` this program the detrending of single time serials won't eliminate the effects of extrinsic noise. When control parameter changes gradully from one regime to another, the trend of EWS is quantified by Kandell's tau correaltion. Since I also used this program to test Chen's model of large noise, so it might look confusing. In the modified version, I also include the calcualtion of _Kandell's_ tau, which quantifies the trend of increase with 1 means maximum trend, and 0 without trend
 
+`toggSwiVarCorrGLPext.m` use Gillespie algorithm to do simulation, a modified algorithm is called _Extrande_ is also included.
+
 ## functions in negative feedback model
 `negativeVarCorrCLEext.m` this program implement CLE algorithm of a negative feedback motif and shows the false positve resutls when extrinsic noise is considered.
 
