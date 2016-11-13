@@ -13,16 +13,16 @@ clc
 
 as= 4;   %start control parameter
 ae = 20; %end parameter
-time_change = 1e2;   %the simulation time, during which the control paramerter changes from as to ae linearly
-sigmae = 0.0;  %std of extrinsic noise
+time_change = 1e3;   %the simulation time, during which the control paramerter changes from as to ae linearly
+sigmae = 0.1;  %std of extrinsic noise
 tauc = 10;   %correlation time scale of extrinsic noise
 param = [as;10;2;2;0.03;tauc;sigmae];  %parameters
-OMIGA = 10;             %system size
-NUM = 1;
-% paraChgCLEext(param,as,ae,NUM,time_change,OMIGA);
+OMIGA = 50;             %system size
+NUM = 200;
+paraChgCLEext(param,as,ae,NUM,time_change,OMIGA);
 
 % testChenModel(1,time_change);
-JumpTimeChenModel(1e2);
+% JumpTimeChenModel(1e2);
 
 % ChenModelHist()
 
@@ -39,49 +39,112 @@ function paraChgCLEext(param,as,ae,N,time_change,OMIGA,model)
     inx_iniVal = find(dataB(:,1) == as);
     iniVal = OMIGA*[dataA(inx_iniVal,2),dataB(inx_iniVal,2)];
     dt = 0.01;
+    
+    % stable states and saddle nodes
+%     for j1 = 1:length(a1list);
+%         inx_h(j1) = find(dataB(:,1) ==a1list(j1));
+%     end
+    inx_h = 114;
+    high = OMIGA*[dataA(inx_h,2),dataB(inx_h,2)];
+    low = OMIGA*[dataA(inx_h,4),dataB(inx_h,4)];
+    saddle = OMIGA*[dataA(inx_h,3),dataB(inx_h,3)];
+    
 %declare some varibles
 variance1 = cell(N,1);
 variance2 = cell(N,1);
+coeffVar1 = cell(N,1);
+coeffVar2 = cell(N,1);
 corrCLE = cell(N,1);
 lagAuto1 = cell(N,1);
 lagAuto2 = cell(N,1);
 allTimeSelect = cell(N,1);
-
-variance_slide_moment = cell(N,1);
-corrCLE_moment = cell(N,1);
-lagAuto_slide_moment = cell(N,1);
+timeJump = nan(N,1);
+a1tJump = nan(N,1);
+ewsDetr = struct('a1Jump',[],'tJump',[],'var1',[],'var2',[],...
+           'cv1',[],'cv2',[],'corr',[],'lag1',[],'lag2',[],'kv1',[],...
+           'kv2',[],'kcv1',[],'kcv2',[],'kcurr',[],...
+           'klag1',[],'klag2',[]);
+ewsDetr. kv1 = nan(N,1);
+ewsDetr. kv2 = nan(N,1);
+ewsDetr. kcv1 = nan(N,1);
+ewsDetr. kcv2 = nan(N,1);
+ewsDetr. kcurr = nan(N,1);
+ewsDetr. klag1 = nan(N,1);
+ewsDetr. klag2 = nan(N,1);
+% variance_slide_moment = cell(N,1);
+% corrCLE_moment = cell(N,1);
+% lagAuto_slide_moment = cell(N,1);
 
 
 
 for i = 1:N;
-    [time,Y] = CLEtoggleExtrChgPara(param,as,ae,time_change,iniVal',dt,OMIGA);
-     plot(time,Y)
-     hold on
-     [x,~] = ginput(1);   %select time interval to 
-     hold off
-     [~,inx1] = sort(abs(time-x));
-     dataSelect = Y(1:inx1,:);   %select data
-     t_s = time(1:inx1);
+    [time,Y,a1t] = CLEtoggleExtrChgPara(param,as,ae,time_change,iniVal',dt,OMIGA);
+    inxJump = find(Y(:,1) > 1.1*saddle(1) & Y(:,2) < 0.9*saddle(2), 1 );
+    a1tJump(i) = a1t(inxJump);
+    timeJump(i) = time(inxJump);
+%      plot(time,Y)
+%      hold on
+%        line([time(inxJump) time(inxJump)],get(gca,'ylim'))
+%      hold off
+%      [x,~] = ginput(1);   %select time interval to 
+%      hold off
+%      [~,inxJump] = sort(abs(time-x));
+%      dataSelect = Y(1:inxJump,:);
+%      inxJump2 = inxJump - round(10/dt);
+     dataSelect = Y(1:inxJump,:);   %select data
+     t_s = time(1:inxJump);
+     
      %first we don't detrend it
-%      detrendData1 = dataDetrend(dataSelect(:,1),t_s,30);  %detrending methods
-%      detrendData2 = dataDetrend(dataSelect(:,2),t_s,30);  %detrending methods
+     detrendData1 = dataDetrend(dataSelect(:,1),t_s,30);  %detrending methods
+     detrendData2 = dataDetrend(dataSelect(:,2),t_s,30);  %detrending methods
      slidWin = round(length(dataSelect)/2);
      GAP = 100;
-     [variance_slide,corrCLE{i},lagAuto_slide,timeSelect] = slidingWidownAnalysis([dataSelect(:,1),dataSelect(:,2)],slidWin,GAP,dt);
+%      [variance_slide,corrCLE{i},lagAuto_slide,timeSelect] = slidingWidownAnalysis([dataSelect(:,1),dataSelect(:,2)],slidWin,GAP,dt);
+     [variance_slide,corrCLE{i},lagAuto_slide,timeSelect,cv_slide] = slidingWidownAnalysis([detrendData1,detrendData2],slidWin,GAP,dt);
      variance1{i} = variance_slide(:,1);
+     ewsDetr.kv1(i) = corr((1:length(variance1{i}))',variance1{i},'type','Kendall');
+     
      variance2{i} = variance_slide(:,2);
+     ewsDetr.kv2(i) = corr((1:length(variance1{i}))',variance1{i},'type','Kendall');
+     
+     coeffVar1{i} = cv_slide(:,1);
+     ewsDetr.kcv1(i) = corr((1:length(variance1{i}))',coeffVar1{i},'type','Kendall');
+     
+     coeffVar2{i} = cv_slide(:,2);
+     ewsDetr.kcv2(i) = corr((1:length(variance1{i}))',coeffVar2{i},'type','Kendall');
+     
      lagAuto1{i} = lagAuto_slide(:,1);
+     ewsDetr.klag1(i) = corr((1:length(variance1{i}))',lagAuto1{i},'type','Kendall');
+     
      lagAuto2{i} = lagAuto_slide(:,2);
+     ewsDetr.klag2(i) = corr((1:length(variance1{i}))',lagAuto2{i},'type','Kendall');
+     
+     ewsDetr.kcurr(i) = corr((1:length(variance1{i}))',corrCLE{i}(:,1),'type','Kendall');
      allTimeSelect{i} = timeSelect;
      
-     %using moment expansion method proposed by Luolan Chen
-     lagTime = 50;
-     allMoment = monmentFun(dataSelect(:,1:2),lagTime);
-     detrendData3 = dataDetrend(allMoment,t_s,30);
-     slidWin = round(length(detrendData3)/2);
-     GAP = 10;
-     [variance_slide_moment{i},corrCLE_moment{i},lagAuto_slide_moment{i},timeSelect]= slidingWidownAnalysis(detrendData3,slidWin,GAP,dt);
+%      %using moment expansion method proposed by Luolan Chen
+%      lagTime = 50;
+%      allMoment = monmentFun(dataSelect(:,1:2),lagTime);
+%      detrendData3 = dataDetrend(allMoment,t_s,30);
+%      slidWin = round(length(detrendData3)/2);
+%      GAP = 10;
+%      [variance_slide_moment{i},corrCLE_moment{i},lagAuto_slide_moment{i},timeSelect]= slidingWidownAnalysis(detrendData3,slidWin,GAP,dt);
 end
+
+%strore all the relevant data into struct
+ewsDetr.a1Jump = a1tJump;
+ewsDetr.tJump = timeJump;
+ewsDetr.var1 = variance1;
+ewsDetr.var2 = variance2;
+ewsDetr.cv1 = coeffVar1;
+ewsDetr.cv2 = coeffVar2;
+ewsDetr.corr = corrCLE;
+ewsDetr.lag1 = lagAuto1;
+ewsDetr.lag2 = lagAuto2;
+
+currentFolder = pwd;  
+saveFile = [currentFolder,filesep,'figure and data',filesep,'toggSwiTimeSerialDetrend_N',...
+        num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
 
 %plot the results
 close all
@@ -229,7 +292,7 @@ function ChenModelHist()
     end
 end
 
-function [time,Y] = CLEtoggleExtrChgPara(param,as,ae,time_change,inV,dt,OMIGA)
+function [time,Y,a1t] = CLEtoggleExtrChgPara(param,as,ae,time_change,inV,dt,OMIGA)
 
 a2 = param(2);
 n1 = param(3);
@@ -271,14 +334,16 @@ time = (0:dt:N*dt)';
 Y = [[inV;0]';X];
 
 end
-function [variance_slide,corr_slide,lagAuto_slide,timeSelect] = slidingWidownAnalysis(data,slidWin,GAP,dt)
+function [variance_slide,corr_slide,lagAuto_slide,timeSelect,cv_slide] = slidingWidownAnalysis(data,slidWin,GAP,dt)
 
 [ROW,COL] = size(data);
 numPoint = floor((ROW - slidWin)/GAP+1); %
 
 lagAuto_slide = zeros(numPoint,COL);
 variance_slide = zeros(numPoint,COL);
+cv_slide = zeros(numPoint,COL);
 corr_slide = zeros(numPoint,COL*(COL+1)/2);
+
 
 
 INITIL = mod((ROW - slidWin),GAP);
@@ -287,6 +352,7 @@ for i0 = 1:numPoint;
     Vector = data(INITIL+1+(i0-1)*GAP:(i0-1)*GAP+INITIL+slidWin,:);
     timeSelect(i0) = ((i0-1)*GAP+INITIL+slidWin)*dt;
     variance_slide(i0,:) = var(Vector,0,1);
+    cv_slide(i0,:) = std(Vector,0,1)/mean(Vector,1);
     
     count = 1;
     for j1 = 1:(COL-1);
@@ -471,5 +537,10 @@ for i1 = 1:round(time_change/dt);
     end
     
 end
+
+end
+function inxJump = toggTimeJump(time,Y,low)
+% return when it jumped to alternative state
+    inxJump = find(Y(:,1) > 1.05*low(1) && Y(:,2) < 0.95*low(2));
 
 end
