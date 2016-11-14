@@ -25,14 +25,19 @@ time_scale = TimeSimu.timeScale;
 inx_ts = 1:3;
 
 %plot the variance of B
+
+figure('Units','inches','Position',[0 0 8 7],...
+'PaperPositionMode','auto');
 figure(1)
 hold on
-errorbar(AmpSim.a1(:,inx_se), AmpSim.var2(:,inx_se),AmpSim.var2_std(:,inx_se),'o','MarkerSize',15)
-plot(AmpLNA.a1,AmpLNA.varB(:,inx_se+1),'LineWidth',3)
-plot(AmpLNA.a1,AmpLNA.var0B,'k-','LineWidth',3)
+h1 = errorbar(AmpSim.a1(:,inx_se), AmpSim.var2(:,inx_se),AmpSim.var2_std(:,inx_se),...
+    'o','MarkerSize',15,'LineWidth',2);
+plot(AmpLNA.a1,AmpLNA.varB(:,inx_se+1),'LineWidth',2)
+plot(AmpLNA.a1,AmpLNA.var0B,'k-','LineWidth',2)
 hold off
-set(gca,'YScale','log','FontSize',24,'FontWeight','Bold')
-xlabel('a1','FontSize',30,'FontName','Myriad Pro','FontWeight','Bold')
-ylabel('variacne of B','FontSize',30,'FontName','Myriad Pro','FontWeight','Bold')
+axis([3,16,100,8000])
+set(gca,'Xtick',3:2:16,'YScale','log','FontName','Times','FontSize',24,'FontWeight','Bold')
+xlabel('a1','FontSize',30,'FontName','Helvetica','FontWeight','Bold')
+ylabel('variacne of B','FontSize',30,'FontName','Helvetica','FontWeight','Bold')
 
 % plot cv
