@@ -18,7 +18,7 @@ sigmae = 0.1;  %std of extrinsic noise
 tauc = 10;   %correlation time scale of extrinsic noise
 param = [as;10;2;2;0.03;tauc;sigmae];  %parameters
 OMIGA = 50;             %system size
-NUM = 3;
+NUM = 500;
 paraChgCLEext(param,as,ae,NUM,time_change,OMIGA);
 
 % testChenModel(1,time_change);
@@ -28,7 +28,7 @@ paraChgCLEext(param,as,ae,NUM,time_change,OMIGA);
 
 end
 
-function paraChgCLEext(param,as,ae,N,time_change,OMIGA,model)
+function paraChgCLEext(param,as,ae,N,time_change,OMIGA)
 
 
     %if unspecified, use my model
@@ -60,12 +60,14 @@ corrCLE = cell(N,1);
 lagAuto1 = cell(N,1);
 lagAuto2 = cell(N,1);
 allTimeSelect = cell(N,1);
+alla1 = cell(N,1);
 timeJump = nan(N,1);
 a1tJump = nan(N,1);
 ewsDetr = struct('a1Jump',[],'tJump',[],'var1',[],'var2',[],...
            'cv1',[],'cv2',[],'corr',[],'lag1',[],'lag2',[],'kv1',[],...
            'kv2',[],'kcv1',[],'kcv2',[],'kcurr',[],...
-           'klag1',[],'klag2',[],'Fano1',[],'Fano2',[],'kf1',[],'kf2',[]);
+           'klag1',[],'klag2',[],'Fano1',[],'Fano2',[],'kf1',[],'kf2',[],...
+           'time',[],'a1chg',[]);
 ewsDetr. kv1 = nan(N,1);
 ewsDetr. kv2 = nan(N,1);
 ewsDetr. kcv1 = nan(N,1);
@@ -99,17 +101,19 @@ for i = 1:N;
      t_s = time(1:inxJump);
      
      %first we don't detrend it
+      
      detrendData1 = dataDetrend(dataSelect(:,1),t_s,30);  %detrending methods
      detrendData2 = dataDetrend(dataSelect(:,2),t_s,30);  %detrending methods
+     smoothKernel = dataSelect(:,1:2) + [detrendData1,detrendData2];
      slidWin = round(length(dataSelect)/2);
      GAP = 100;
 %      [variance_slide,corrCLE{i},lagAuto_slide,timeSelect] = slidingWidownAnalysis([dataSelect(:,1),dataSelect(:,2)],slidWin,GAP,dt);
-     [variance_slide,corrCLE{i},lagAuto_slide,timeSelect,cv_slide,Fano_slide] = slidingWidownAnalysis([detrendData1,detrendData2],slidWin,GAP,dt);
+     [variance_slide,corrCLE{i},lagAuto_slide,timeSelect,cv_slide,Fano_slide] = slidingWidownAnalysis([detrendData1,detrendData2],slidWin,GAP,dt,smoothKernel);
      variance1{i} = variance_slide(:,1);
      ewsDetr.kv1(i) = corr((1:length(variance1{i}))',variance1{i},'type','Kendall');
      
      variance2{i} = variance_slide(:,2);
-     ewsDetr.kv2(i) = corr((1:length(variance1{i}))',variance1{i},'type','Kendall');
+     ewsDetr.kv2(i) = corr((1:length(variance1{i}))',variance2{i},'type','Kendall');
      
      coeffVar1{i} = cv_slide(:,1);
      ewsDetr.kcv1(i) = corr((1:length(variance1{i}))',coeffVar1{i},'type','Kendall');
@@ -131,8 +135,10 @@ for i = 1:N;
      ewsDetr.klag2(i) = corr((1:length(variance1{i}))',lagAuto2{i},'type','Kendall');
      
      ewsDetr.kcurr(i) = corr((1:length(variance1{i}))',corrCLE{i}(:,1),'type','Kendall');
-     allTimeSelect{i} = timeSelect;
      
+     allTimeSelect{i} = timeSelect;
+     alla1{i} = a1t(ismember(time,timeSelect));  % this seems does not work well
+    
 %      %using moment expansion method proposed by Luolan Chen
 %      lagTime = 50;
 %      allMoment = monmentFun(dataSelect(:,1:2),lagTime);
@@ -152,38 +158,42 @@ ewsDetr.cv2 = coeffVar2;
 ewsDetr.corr = corrCLE;
 ewsDetr.lag1 = lagAuto1;
 ewsDetr.lag2 = lagAuto2;
-ewsDetr.Fano1 = coeffVar1;
-ewsDetr.Fano2 = coeffVar2;
+ewsDetr.Fano1 = FanoFactor1;
+ewsDetr.Fano2 = FanoFactor2;
+ewsDetr.time = allTimeSelect;
+ewsDetr.a1chg = alla1;
 
-currentFolder = pwd;  
-saveFile = [currentFolder,filesep,'figure and data',filesep,'toggSwiTimeSerialDetrend_N',...
-        num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
+
+% currentFolder = pwd;  
+% saveFile = [currentFolder,filesep,'figure and data',filesep,'toggSwiTimeSerialDetrend_N',...
+%         num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
+saveFile = ['toggSwiTimeSerialDetrend_N',num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
 save(saveFile,'-struct','ewsDetr')
 %plot the results
-abclose all
-figure(1)
-xlabel('time','FontSize',30,'FontWeight','Bold')
-ylabel('variance','FontSize',30,'FontWeight','Bold')
-set(gca,'FontSize',24,'FontWeight','Bold')
-hold all
-figure(2)
-xlabel('time','FontSize',30,'FontWeight','Bold')
-ylabel('correlation coefficient','FontSize',30,'FontWeight','Bold')
-set(gca,'FontSize',24,'FontWeight','Bold')
-hold all
-figure(3)
-xlabel('time','FontSize',30,'FontWeight','Bold')
-ylabel('lag-one autocorrelation','FontSize',30,'FontWeight','Bold')
-set(gca,'FontSize',24,'FontWeight','Bold')
-hold all
-for i = 1:N;
-    figure(1)
-    plot(allTimeSelect{i},variance2{i},'LineWidth',2)
-    figure(2)
-    plot(allTimeSelect{i},corrCLE{i},'LineWidth',2)
-    figure(3)
-    plot(allTimeSelect{i},lagAuto2{i},'LineWidth',2)
-end
+% close all
+% figure(1)
+% xlabel('time','FontSize',30,'FontWeight','Bold')
+% ylabel('variance','FontSize',30,'FontWeight','Bold')
+% set(gca,'FontSize',24,'FontWeight','Bold')
+% hold all
+% figure(2)
+% xlabel('time','FontSize',30,'FontWeight','Bold')
+% ylabel('correlation coefficient','FontSize',30,'FontWeight','Bold')
+% set(gca,'FontSize',24,'FontWeight','Bold')
+% hold all
+% figure(3)
+% xlabel('time','FontSize',30,'FontWeight','Bold')
+% ylabel('lag-one autocorrelation','FontSize',30,'FontWeight','Bold')
+% set(gca,'FontSize',24,'FontWeight','Bold')
+% hold all
+% for i = 1:N;
+%     figure(1)
+%     plot(allTimeSelect{i},variance2{i},'LineWidth',2)
+%     figure(2)
+%     plot(allTimeSelect{i},corrCLE{i},'LineWidth',2)
+%     figure(3)
+%     plot(allTimeSelect{i},lagAuto2{i},'LineWidth',2)
+% end
 
 end
 
@@ -323,7 +333,7 @@ mu = exp(-dt/tauc);
 Dext = sigmae*sqrt((1-mu^2)*tauc/2);
 
 %a1 changes with time
-a1t = as + (ae-as)*(0:1:round(time_change/dt))*dt/time_change;
+a1t = (as + (ae-as)*(0:1:round(time_change/dt))*dt/time_change)';
 
 for i1 = 1:round(time_change/dt);
     determin = [a1t(i1)*OMIGA*(a0 + (1-a0)/(1+(Xtemp(2)/OMIGA)^n1))-(1+Xtemp(3))*Xtemp(1);...
@@ -347,15 +357,16 @@ time = (0:dt:N*dt)';
 Y = [[inV;0]';X];
 
 end
-function [variance_slide,corr_slide,lagAuto_slide,timeSelect,cv_slide,Fano_slide] = slidingWidownAnalysis(data,slidWin,GAP,dt)
+function [variance_slide,corr_slide,lagAuto_slide,timeSelect,cv_slide,Fano_slide] = slidingWidownAnalysis(data,slidWin,GAP,dt,varargin)
+
+% if calculate the Fanofactor
 
 [ROW,COL] = size(data);
 numPoint = floor((ROW - slidWin)/GAP+1); %
 
 lagAuto_slide = zeros(numPoint,COL);
 variance_slide = zeros(numPoint,COL);
-cv_slide = zeros(numPoint,COL);
-Fano_slide = zeros(numPoint,COL);
+
 corr_slide = zeros(numPoint,COL*(COL+1)/2);
 
 
@@ -366,8 +377,8 @@ for i0 = 1:numPoint;
     Vector = data(INITIL+1+(i0-1)*GAP:(i0-1)*GAP+INITIL+slidWin,:);
     timeSelect(i0) = ((i0-1)*GAP+INITIL+slidWin)*dt;
     variance_slide(i0,:) = var(Vector,0,1);
-    cv_slide(i0,:) = std(Vector,0,1)/mean(Vector,1);
-    Fano_slide(i0,:) = variance_slide(i0,:)/mean(Vector,1);
+    
+    
     count = 1;
     for j1 = 1:(COL-1);
         for j2 = (j1+1):COL;
@@ -382,6 +393,17 @@ for i0 = 1:numPoint;
         lagAuto_slide(i0,j3) = CORR2(1,2);
     end
    
+end
+
+if nargin > 4
+   Fano_slide = zeros(numPoint,COL);
+   cv_slide = zeros(numPoint,COL);
+   soomthKernel = varargin{1};
+   for i0 = 1:numPoint;
+       Vector = soomthKernel(INITIL+1+(i0-1)*GAP:(i0-1)*GAP+INITIL+slidWin,:);
+       Fano_slide(i0,:) = variance_slide(i0,:)./mean(Vector,1);
+       cv_slide(i0,:) = sqrt(variance_slide(i0,:))./mean(Vector,1);
+   end    
 end
 
 end
