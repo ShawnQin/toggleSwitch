@@ -39,7 +39,7 @@ clc
 
 a1list = 4:1:18;
 sigmae = 0.1;
-tauc = 100;
+tauc = 10;
 param = [15;10;2;2;0.03;tauc;sigmae];
 OMIGA = 20;        %system size
 NUM = 50;
@@ -55,9 +55,9 @@ runTime = 10*tauc;
 %_________________________________________________________________________
 %this is the theoretic calculation part
 %theoretic calculation
-extriLE_CLE_timescale(param,OMIGA,sigmae,Yini,'s');
+% extriLE_CLE_timescale(param,OMIGA,sigmae,Yini,'s');
 % extriLE_CLE_noiseAmpli(param,OMIGA,Yini,'s');
-% extriLE_CLE_SysSize(param,sigmae,Yini,'s')
+extriLE_CLE_SysSize(param,sigmae,Yini,'p')
 
 %_________________________________________________________________________
 
@@ -517,7 +517,7 @@ for j1 = 1:N_a1;
         Dc = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0;...
                 0,param(2)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA];
         Dcle = [a1_list(j1)*OMIGA*(a0 + (1-a0)/(1+steadyODE(j1,2)^param(3)))+steadyODE(j1,1)*OMIGA,0,0;...
-                0,param(2)*OMIGA*(a0 - (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,ss];
+                0,param(2)*OMIGA*(a0 + (1- a0)/(1+steadyODE(j1,1)^param(4)))+steadyODE(j1,2)*OMIGA,0;0,0,ss];
 %         C1 = lyap(A,D);
 %         corrcoef_theory(j1) = C1(1,2)/(sqrt(C1(1,1)*C1(2,2)));
 %         variance_theory(j1,2) = C1(2,2);
@@ -613,7 +613,7 @@ elseif strcmp(PlotSave,'s')
     saveFile = [currentFolder,filesep,'figure and data',filesep,'toggSwiLNATheoryTimeScale_N',...
         num2str(OMIGA),'_se',num2str(sigmae),'.mat'];
 %     save(saveFile,'a1_list','corrcoef_ext_c_theory','corrcoef_ext_cle_theory','variance_ext_c_theory','variance_ext_cle_theory');
-    AllLNATimeScale = struct('a1',[],'se',[],'meanA',[],'meanB',[],'var0A',[],'var0B',[],'corr0',[],'lag0A',[],...
+    AllLNATimeScale = struct('a1',[],'meanA',[],'meanB',[],'var0A',[],'var0B',[],'corr0',[],'lag0A',[],...
         'lag0B',[],'varA',[],'varB',[],'corr',[],'lagA',[],'lagB',[]);
     AllLNATimeScale.a1 = a1_list';
     AllLNATimeScale.ts = BETA';
@@ -990,10 +990,11 @@ figure(2)
 % plot(a1_list,variance_theory,'r-','Linewidth',3)
 hold on
 % plot(a1_list,OMIGA^2*variance_ext_c_theory,'k-','Linewidth',3)
-plot(a1_list,variance_ext_c_theory(:,2,2),'k-','Linewidth',3)
+% plot(a1_list,variance_ext_c_theory(:,2,2)/steadyODE(:,2),'k-','Linewidth',3)
 for j4 = 1:length(OMIGA);
 %     plot(a1_list,variance_ext_theory(:,j4),'Linewidth',3,'Color',colorSet(j4,:))
-    plot(a1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
+    plot(a1_list,variance_ext_cle_theory(:,j4,2)./steadyODE(:,2)/OMIGA(j4),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
+    plot(a1_list,variance_ext_c_theory(:,j4,2)./steadyODE(:,2)/OMIGA(j4),'k-','Linewidth',3)
 %     plot(a1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
     
 end
@@ -1024,13 +1025,13 @@ elseif strcmp(plotSave,'s')
     
     %save or write xlsx file
     AllLNASystemSize = struct('a1',[],'se',[],'meanA',[],'meanB',[],'var0A',[],'var0B',[],'corr0',[],'lag0A',[],...
-        'lag0B',[],'varA',[],'varB',[],'corr',[],'lagA',[],'lagB',[]);
+        'lag0B',[],'varA',[],'varB',[],'corr',[],'lagA',[],'lagB',[],'Size',[]);
     AllLNASystemSize.a1 = a1_list';
-    AllLNASystemSize.se = ss';
+    AllLNASystemSize.se = param(6);
     AllLNASystemSize.meanA = steadyODE(:,1);
     AllLNASystemSize.meanB = steadyODE(:,2);
-    AllLNASystemSize.var0A = variance_ext_c_theory(:,1);
-    AllLNASystemSize.var0B = variance_ext_c_theory(:,2);
+    AllLNASystemSize.var0A = variance_ext_c_theory(:,:,1);
+    AllLNASystemSize.var0B = variance_ext_c_theory(:,:,2);
     AllLNASystemSize.corr0 = corrcoef_ext_c_theory;
     AllLNASystemSize.lag0A = lagOneC_theory(:,1);
     AllLNASystemSize.lag0B = lagOneC_theory(:,2);
@@ -1039,6 +1040,7 @@ elseif strcmp(plotSave,'s')
     AllLNASystemSize.corr = corrcoef_ext_cle_theory;
     AllLNASystemSize.lagA = lagOneCLEext_theory(:,:,1);
     AllLNASystemSize.lagB = lagOneCLEext_theory(:,:,2);
+    AllLNASystemSize.Size = OMIGA;
     
     save(saveFile,'-struct','AllLNASystemSize')
     
