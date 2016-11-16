@@ -14,11 +14,11 @@ clc
 as= 4;   %start control parameter
 ae = 20; %end parameter
 time_change = 1e3;   %the simulation time, during which the control paramerter changes from as to ae linearly
-sigmae = 0.1;  %std of extrinsic noise
+sigmae = 0;  %std of extrinsic noise
 tauc = 10;   %correlation time scale of extrinsic noise
 param = [as;10;2;2;0.03;tauc;sigmae];  %parameters
 OMIGA = 50;             %system size
-NUM = 500;
+NUM = 1;
 paraChgCLEext(param,as,ae,NUM,time_change,OMIGA);
 
 % testChenModel(1,time_change);
@@ -85,10 +85,11 @@ ewsDetr. kf2 = nan(N,1);
 
 for i = 1:N;
     [time,Y,a1t] = CLEtoggleExtrChgPara(param,as,ae,time_change,iniVal',dt,OMIGA);
-    inxJump = find(Y(:,1) > 1.1*saddle(1) & Y(:,2) < 0.9*saddle(2), 1 );
+    inxJump = find(Y(:,1) > 1.3*saddle(1) & Y(:,2) < 0.7*saddle(2), 1 );
     a1tJump(i) = a1t(inxJump);
     timeJump(i) = time(inxJump);
-%      plot(time,Y)
+    plot(time,Y)
+    hold on
 %      hold on
 %        line([time(inxJump) time(inxJump)],get(gca,'ylim'))
 %      hold off
@@ -105,6 +106,8 @@ for i = 1:N;
      detrendData1 = dataDetrend(dataSelect(:,1),t_s,30);  %detrending methods
      detrendData2 = dataDetrend(dataSelect(:,2),t_s,30);  %detrending methods
      smoothKernel = dataSelect(:,1:2) + [detrendData1,detrendData2];
+     plot(t_s,smoothKernel(:,2),'k-','LineWidth',2)
+     hold off
      slidWin = round(length(dataSelect)/2);
      GAP = 100;
 %      [variance_slide,corrCLE{i},lagAuto_slide,timeSelect] = slidingWidownAnalysis([dataSelect(:,1),dataSelect(:,2)],slidWin,GAP,dt);
@@ -167,34 +170,35 @@ ewsDetr.a1chg = alla1;
 % currentFolder = pwd;  
 % saveFile = [currentFolder,filesep,'figure and data',filesep,'toggSwiTimeSerialDetrend_N',...
 %         num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
-saveFile = ['toggSwiTimeSerialDetrend_N',num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
-save(saveFile,'-struct','ewsDetr')
+% saveFile = ['toggSwiTimeSerialDetrend_N',num2str(OMIGA),'_se',num2str(param(7)),'_tauc',num2str(param(6)),'.mat'];
+% save(saveFile,'-struct','ewsDetr')
 %plot the results
-% close all
-% figure(1)
-% xlabel('time','FontSize',30,'FontWeight','Bold')
-% ylabel('variance','FontSize',30,'FontWeight','Bold')
-% set(gca,'FontSize',24,'FontWeight','Bold')
-% hold all
-% figure(2)
-% xlabel('time','FontSize',30,'FontWeight','Bold')
-% ylabel('correlation coefficient','FontSize',30,'FontWeight','Bold')
-% set(gca,'FontSize',24,'FontWeight','Bold')
-% hold all
-% figure(3)
-% xlabel('time','FontSize',30,'FontWeight','Bold')
-% ylabel('lag-one autocorrelation','FontSize',30,'FontWeight','Bold')
-% set(gca,'FontSize',24,'FontWeight','Bold')
-% hold all
-% for i = 1:N;
-%     figure(1)
-%     plot(allTimeSelect{i},variance2{i},'LineWidth',2)
-%     figure(2)
-%     plot(allTimeSelect{i},corrCLE{i},'LineWidth',2)
-%     figure(3)
-%     plot(allTimeSelect{i},lagAuto2{i},'LineWidth',2)
-% end
+close all
+figure(1)
+xlabel('time','FontSize',30,'FontWeight','Bold')
+ylabel('variance','FontSize',30,'FontWeight','Bold')
+set(gca,'FontSize',24,'FontWeight','Bold')
+hold all
+figure(2)
+xlabel('time','FontSize',30,'FontWeight','Bold')
+ylabel('correlation coefficient','FontSize',30,'FontWeight','Bold')
+set(gca,'FontSize',24,'FontWeight','Bold')
+hold all
+figure(3)
+xlabel('time','FontSize',30,'FontWeight','Bold')
+ylabel('lag-one autocorrelation','FontSize',30,'FontWeight','Bold')
+set(gca,'FontSize',24,'FontWeight','Bold')
+hold all
+for i = 1:N;
+    figure(1)
+    plot(allTimeSelect{i},variance2{i},'LineWidth',2)
+    figure(2)
+    plot(allTimeSelect{i},corrCLE{i},'LineWidth',2)
+    figure(3)
+    plot(allTimeSelect{i},lagAuto2{i},'LineWidth',2)
+end
 
+save('exampleTimeDetrIntri.mat','-struct','ewsDetr')
 end
 
 function testChenModel(N,time_change)
