@@ -6,7 +6,7 @@
 
 clear
 clc
-DataFolder = '/home/shan/Documents/MATLAB/criticlity/toggleSwitch';
+DataFolder = '/home/shan/Documents/MATLAB/criticlity/toggleSwitch/toggCLEdata';
 
 %get all the mat file in this folder
 AllFile = dir(fullfile(DataFolder,filesep,'*.mat'));
@@ -14,13 +14,13 @@ AllFile = dir(fullfile(DataFolder,filesep,'*.mat'));
 AllFile = {AllFile.name}.'; 
 % get indices of files matching regular expression
 FIND = @(str) cellfun(@(c) ~isempty(c), regexp(AllFile,str,'once'));
-pattern1 = '_tau-100_se[0-9\._]+N20';
+pattern1 = '_tau-100_se[0-9\._]+N100';
 
 %for the amplitude data
 AllFile_amplitude = AllFile(FIND(pattern1));
 
 % all the correlation time scale
-pattern2 = 'se0.1_N20';
+pattern2 = 'se0.1_N100';
 AllFile_timescale = AllFile(FIND(pattern2));
 
 % summary of extrinsic noise with different amplitude of noise, stored in a
@@ -111,7 +111,7 @@ for j0 = 1:length(AllFile_timescale)
 end
 
 %save the summary data
-saveFile1 = 'ExtriFig1SimuAmp.mat';
-saveFile2 = 'ExtriFig1SimuTime.mat';
+saveFile1 = 'ExtriFig1SimuAmpN100.mat';
+saveFile2 = 'ExtriFig1SimuTimeN100.mat';
 save(saveFile1,'-struct','SummaryAmpli')
 save(saveFile2,'-struct','SummaryTimeScale')
