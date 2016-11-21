@@ -13,6 +13,8 @@ Here is the brief description of what this program did. For the _toggle switch _
 
 `toggSwiVarCorrGLPext.m` use Gillespie algorithm to do simulation, a modified algorithm is called _Extrande_ is also included.
 
+`plotGillespieDataEWS.m' plot the EWS figure from Gillespie algorithm
+
 ## functions in negative feedback model
 `negativeVarCorrCLEext.m` this program implement CLE algorithm of a negative feedback motif and shows the false positve resutls when extrinsic noise is considered.
 
