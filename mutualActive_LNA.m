@@ -11,7 +11,7 @@ function mutualActive_LNA()
 clear
 clc
 
-k1list = 0.1:0.01:0.55;
+k1list = 0.1:0.01:0.6;
 sigmae = 0.05;
 tauc = 10;
 param = [0.3;0.5;3;3;0.05;tauc;sigmae];
@@ -30,8 +30,8 @@ syms x y E k1 k2 a0 n1 n2 b N
 J3 = jacobian([N*(a0 + (1-a0)*(y/N)^n1/(k1^n1+(y/N)^n1)) - x;N*(a0 + (1-a0)*(x/N)^n2/(k2^n2+(x/N)^n2)) - y],[x y]);
 Ac = double(subs(J3,{x,y,k1 k2 n1 n2 a0 b N},{vec(1)*OMIGA,vec(2)*OMIGA,param(1),param(2),param(3),param(4),param(5),param(6),OMIGA}));
 
-% J4 = jacobian([N*(a0 + (1-a0)*(y/N)^n1/(k1^n1+(y/N)^n1)) - (1+E)*x;N*(a0 + (1-a0)*(x/N)^n2/(k2^n2+(x/N)^n2)) - (1+E)*y;-b*E],[x y E]);
-J4 = jacobian([N*(a0 + (1+0)*(1-a0)*(y/N)^n1/(k1^n1+(y/N)^n1))-x;N*(a0 + (1+E)*(1-a0)*(x/N)^n2/(k2^n2+(x/N)^n2))-y;-b*E],[x y E]);
+J4 = jacobian([N*(a0 + (1-a0)*(y/N)^n1/(k1^n1+(y/N)^n1)) - (1+E)*x;N*(a0 + (1-a0)*(x/N)^n2/(k2^n2+(x/N)^n2)) - (1+E)*y;-b*E],[x y E]);
+% J4 = jacobian([N*(a0 + (1+0)*(1-a0)*(y/N)^n1/(k1^n1+(y/N)^n1))-x;N*(a0 + (1+E)*(1-a0)*(x/N)^n2/(k2^n2+(x/N)^n2))-y;-b*E],[x y E]);
 Ace = double(subs(J4,{x,y,E,k1 k2 n1 n2 a0 b N},{vec(1)*OMIGA,vec(2)*OMIGA,0,param(1),param(2),param(3),param(4),param(5),param(6),OMIGA}));
 
 end
@@ -163,7 +163,7 @@ dataA = csvread(fileA);
 dataB = csvread(fileB);
 
 k1_s = 0.1;
-k1_e = 0.7;
+k1_e = 0.6;
 
 a0 = param(1);
 k2 = param(3);
@@ -172,24 +172,28 @@ n2 = param(5);
 param(6) = 1/param(6);
 
 
-ss= [1e-3,1e-2,1e-1,0.25];  %amplitute of extrinsic noise
+ss= [1e-2,5e-2,1e-1,0.25];  %amplitute of extrinsic noise
 sigmae = 2*ss.^2*param(6);
 
 k1_list = k1_s:0.01:k1_e;
 N_k1 = length(k1_list);
 for i = 1:N_k1;
     indexofk1(i) = find(dataA(:,1)==round(k1_list(i)*100)/100);
-    steadyValue(i,:) = [dataA(indexofk1(i),4),dataB(indexofk1(i),4)];
+    if(dataA(indexofk1(i),4) ~= 0)
+        steadyValue(i,:) = [dataA(indexofk1(i),4),dataB(indexofk1(i),4)];
+    else
+        steadyValue(i,:) = [dataA(indexofk1(i),2),dataB(indexofk1(i),2)];
+    end
 end
 
 
-corrcoef_ext_cle_theory = zeros(N_k1,1);
-variance_ext_cle_theory = zeros(N_k1,length(sigmae));
+corrcoef_ext_cle_theory = zeros(N_k1,length(sigmae));
+variance_ext_cle_theory = zeros(N_k1,length(sigmae),2);
 
-lagOneCLEext_theory = zeros(N_k1,length(sigmae));
-variance_CLE_theory = zeros(N_k1,1);
+lagOneCLEext_theory = zeros(N_k1,length(sigmae),2);
+variance_CLE_theory = zeros(N_k1,2);
 corrcoef_CLE_theory = zeros(N_k1,1);
-lagOneCLE_theory = zeros(N_k1,1);
+lagOneCLE_theory = zeros(N_k1,2);
 
 for j1 = 1:N_k1;
     param(1)= k1_list(j1);
@@ -206,20 +210,53 @@ for j1 = 1:N_k1;
                    
         C3 = lyap(Ac,Dc);            
         corrcoef_CLE_theory(j1) = C3(1,2)/(sqrt(C3(1,1)*C3(2,2)));
-        variance_CLE_theory(j1) = C3(2,2)/(OMIGA*steadyValue(j2,2));
+        variance_CLE_theory(j1,1) = C3(1,1);
+        variance_CLE_theory(j1,2) = C3(2,2);
         G3 = C3*expm(Ac');
-        lagOneCLE_theory(j1) = G3(2,2)/C3(2,2);
+        lagOneCLE_theory(j1,2) = G3(2,2)/C3(2,2);
+        lagOneCLE_theory(j1,1) = G3(1,1)/C3(1,1);
         
         C4 = lyap(Acle,Dcle);
         corrcoef_ext_cle_theory(j1,j2) = C4(1,2)/(sqrt(C4(1,1)*C4(2,2)));
-        variance_ext_cle_theory(j1,j2) = C4(2,2)/(OMIGA*steadyValue(j2,2));
+        variance_ext_cle_theory(j1,j2,2) = C4(2,2);
+        variance_ext_cle_theory(j1,j2,1) = C4(1,1);
         G4 = C4*expm(Acle');
-        lagOneCLEext_theory(j1,j2) = G4(2,2)/C4(2,2);
+        lagOneCLEext_theory(j1,j2,2) = G4(2,2)/C4(2,2);
+        lagOneCLEext_theory(j1,j2,1) = G4(1,1)/C4(1,1);
 
     end
 end
+
+
+% save the data for future use
+    currentFolder = pwd;
+    saveFile = [currentFolder,filesep,'mutualActi',filesep,'MutualActiLNATheoryAmpl_N',...
+        num2str(OMIGA),'.mat'];
+%     save(saveFile,'a1_list','corrcoef_ext_c_theory','corrcoef_ext_cle_theory','variance_ext_c_theory','variance_ext_cle_theory');
+    
+    %save or write xlsx file
+    AllLNAAmplitude = struct('k1',[],'se',[],'meanA',[],'meanB',[],'var0A',[],'var0B',[],'corr0',[],'lag0A',[],...
+        'lag0B',[],'varA',[],'varB',[],'corr',[],'lagA',[],'lagB',[]);
+    AllLNAAmplitude.k1 = k1_list';
+    AllLNAAmplitude.se = ss';
+    AllLNAAmplitude.meanA = steadyValue(:,1);
+    AllLNAAmplitude.meanB = steadyValue(:,2);
+    AllLNAAmplitude.var0A = variance_CLE_theory(:,1);
+    AllLNAAmplitude.var0B = variance_CLE_theory(:,2);
+    AllLNAAmplitude.corr0 = corrcoef_CLE_theory;
+    AllLNAAmplitude.lag0A = lagOneCLE_theory(:,1);
+    AllLNAAmplitude.lag0B = lagOneCLE_theory(:,2);
+    AllLNAAmplitude.varA = variance_ext_cle_theory(:,:,1);
+    AllLNAAmplitude.varB = variance_ext_cle_theory(:,:,2);
+    AllLNAAmplitude.corr = corrcoef_ext_cle_theory;
+    AllLNAAmplitude.lagA = lagOneCLEext_theory(:,:,1);
+    AllLNAAmplitude.lagB = lagOneCLEext_theory(:,:,2);
+    
+    save(saveFile,'-struct','AllLNAAmplitude')
+    
+    
 %plot the theoretic results
- colorSet = [[0;0.3;0.6;0.9],zeros(4,2)];
+colorSet = [[0;0.3;0.6;0.9],zeros(4,2)];
 figure(1)
 
 hold on
@@ -235,9 +272,9 @@ hold off
 
 figure(2)
 hold on
-plot(k1_list,variance_CLE_theory,'k-','Linewidth',3)
+plot(k1_list,variance_CLE_theory(:,2),'k-','Linewidth',3)
 for j4 = 1:length(sigmae);
-    plot(k1_list,variance_ext_cle_theory(:,j4),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
+    plot(k1_list,variance_ext_cle_theory(:,j4,2),'Linewidth',3,'Color',colorSet(j4,:),'LineStyle','--')
     
 end
 hold off
@@ -246,12 +283,13 @@ xlabel('a1','FontSize',24,'FontWeight','Bold')
 ylabel('variacne of gene B','FontSize',24,'FontWeight','Bold')
 set(gca,'FontSize',24,'FontWeight','Bold','LineWidth',2)
 
-figure(3)
 
+
+figure(3)
 hold on
 plot(k1_list,lagOneCLE_theory,'k-','Linewidth',3)
 for j5 = 1:length(sigmae);
-    plot(k1_list,lagOneCLEext_theory(:,j5),'Linewidth',3,'Color',colorSet(j5,:),'LineStyle','--')    
+    plot(k1_list,lagOneCLEext_theory(:,j5,2),'Linewidth',3,'Color',colorSet(j5,:),'LineStyle','--')    
 end
 hold off
 legend('LE','CLE','LE-extr-0.001','CLE-extr-0.001','LE-extr-0.01','CLE-extr-0.01','LE-extr-0.05','CLE-extr-0.05','LE-extr-0.1','CLE-extr-0.1')
