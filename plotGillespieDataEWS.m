@@ -75,47 +75,66 @@ filenameAmpLNA = [Folder1, filesep,'toggSwiLNATheoryAmpl_N20.mat'];
 AmpLNA = load(filenameAmpLNA);
 
 % index of selected different amplitude of EN
-inx_se = 1:3;
+inx_se = [2,3,4];
+
+%% set the font size, symbol size and line width
+errorBarSize = 1.5;
+errorMarkerSize  = 12;
+LineWidth = 3;
+labelFontSize = 36;
+axisFontSize = 30;
+ticketWidth = 1.5;
+
+figureSize = [0 0 8 6];
+
+colorSet = [3, 110, 184;224, 135, 51; 202, 39, 44; 0, 0, 0]/256;
 
 %% plot the variance of B
 figure(1)
-set(gcf,'Units','inches','Position',[0 0 8 6],...
+set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 
 hold on
-h1 = errorbar(SummaryAmpli.a1, SummaryAmpli.var2,SummaryAmpli.var2_std,...
-    'o','MarkerSize',12,'LineWidth',1.5,'MarkerFaceColor','auto');
-plot(AmpLNA.a1,AmpLNA.varB,'LineWidth',2)
-plot(AmpLNA.a1,AmpLNA.var0B,'k-','LineWidth',2)
+for i0 = 1:3;
+    errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.var2(:,i0),SummaryAmpli.var2_std(:,i0),...
+    'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'Color',colorSet(i0,:),'MarkerFaceColor','auto');
+    plot(AmpLNA.a1,AmpLNA.varB(:,inx_se(i0)),'LineWidth',LineWidth,'Color',colorSet(i0,:))
+end
+plot(AmpLNA.a1,AmpLNA.var0B,'-','Color',colorSet(4,:),'LineWidth',LineWidth)
 hold off
 axis([3,16,100,8000])
-set(gca,'Xtick',3:2:16,'Ytick',[100,1000,5000],'YScale','log','LineWidth',1.5,'FontName','Helvetica','FontSize',28)
-xlabel('a1','FontSize',32,'FontName','Helvetica')
-ylabel('variacne of B','FontSize',32,'FontName','Helvetica')
+set(gca,'Xtick',3:2:16,'Ytick',[100,1000,5000],'YScale','log','LineWidth',ticketWidth,'FontName','Helvetica','FontSize',axisFontSize)
+xlabel('a1','FontSize',labelFontSize,'FontName','Helvetica')
+ylabel('variacne of B','FontSize',labelFontSize,'FontName','Helvetica')
 fileNamePdf = [DataFolder,filesep,'GlpVar.pdf'];
 fileNameFig = [DataFolder,filesep,'GlpVar.fig'];
 print('-dpdf',fileNamePdf)
 saveas(gcf,fileNameFig)
 %% plot cv
 figure(2)
-set(gcf,'Units','inches','Position',[0 0 8 6],...
+set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 hold on
 cvB = nan(size(AmpLNA.varB,1),length(inx_se));
 for i0 = 1:length(inx_se)
-    cvB(:,i0) = sqrt(AmpLNA.varB(:,i0+1))./AmpLNA.meanB/OMEGA;
+    cvB(:,i0) = sqrt(AmpLNA.varB(:,inx_se(i0)))./AmpLNA.meanB/OMEGA;
+    plot(AmpLNA.a1,cvB(:,i0),'LineWidth',LineWidth,'Color',colorSet(i0,:))
+    errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.cv2(:,i0),SummaryAmpli.cv2_std(:,i0),...
+    'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'MarkerFaceColor',...
+    'auto','Color',colorSet(i0,:));
 end
 cv0B = sqrt(AmpLNA.var0B)./AmpLNA.meanB/OMEGA;
 % cvB = sqrt(AmpLNA.varB(:,inx_se))./AmpLNA.meanB(:,inx_se)
-h1 = errorbar(SummaryAmpli.a1, SummaryAmpli.cv2,SummaryAmpli.cv2_std,...
-    'o','MarkerSize',12,'LineWidth',1.5,'MarkerFaceColor','auto');
-plot(AmpLNA.a1,cvB,'LineWidth',2)
-plot(AmpLNA.a1,cv0B,'k-','LineWidth',2)
+% errorbar(SummaryAmpli.a1, SummaryAmpli.cv2,SummaryAmpli.cv2_std,...
+%     'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'MarkerFaceColor',...
+%     'auto','Color',colorSet(i0));
+% plot(AmpLNA.a1,cvB,'LineWidth',LineWidth)
+plot(AmpLNA.a1,cv0B,'-','LineWidth',LineWidth,'Color',colorSet(4,:))
 hold off
 axis([3,16,0,0.4])
-set(gca,'Xtick',3:2:16,'Ytick',0:0.1:0.4,'LineWidth',1.5,'FontName','Helvetica','FontSize',28)
-xlabel('a1','FontSize',32,'FontName','Helvetica')
-ylabel('correlation coefficient of B','FontSize',30,'FontName','Helvetica')
+set(gca,'Xtick',3:2:16,'Ytick',0:0.1:0.4,'LineWidth',ticketWidth,'FontName','Helvetica','FontSize',axisFontSize)
+xlabel('a1','FontSize',labelFontSize,'FontName','Helvetica')
+ylabel('coefficient of variation','FontSize',labelFontSize,'FontName','Helvetica')
 fileNameCvPdf = [DataFolder,filesep,'Glpcv.pdf'];
 fileNameFanoFig = [DataFolder,filesep,'Glpcv.fig'];
 print('-dpdf',fileNameCvPdf)
@@ -124,24 +143,28 @@ saveas(gcf,fileNameFanoFig)
 
 %% plot Fano factor
 figure(3)
-set(gcf,'Units','inches','Position',[0 0 8 6],...
+set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 hold on
 FanoB = nan(size(AmpLNA.varB,1),length(inx_se));
 for i0 = 1:length(inx_se)
-    FanoB(:,i0) = AmpLNA.varB(:,i0+1)./AmpLNA.meanB/OMEGA;
+    FanoB(:,i0) = AmpLNA.varB(:,inx_se(i0))./AmpLNA.meanB/OMEGA;
+    plot(AmpLNA.a1,FanoB(:,i0),'LineWidth',LineWidth,'Color',colorSet(i0,:))
+    errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.Fano2(:,i0),SummaryAmpli.Fano2_std(:,i0),...
+        'o','MarkerSize',errorMarkerSize,'Color',colorSet(i0,:),'LineWidth',errorBarSize,...
+    'MarkerFaceColor','auto');
 end
 Fano0B = AmpLNA.var0B./AmpLNA.meanB/OMEGA;
 % cvB = sqrt(AmpLNA.varB(:,inx_se))./AmpLNA.meanB(:,inx_se)
-errorbar(SummaryAmpli.a1(:,inx_se), SummaryAmpli.Fano2(:,inx_se),SummaryAmpli.Fano2_std(:,inx_se),...
-    'o','MarkerSize',12,'LineWidth',1.5,'MarkerFaceColor','auto');
-plot(AmpLNA.a1,FanoB,'LineWidth',2)
-plot(AmpLNA.a1,Fano0B,'k-','LineWidth',2)
+% errorbar(SummaryAmpli.a1(:,inx_se), SummaryAmpli.Fano2(:,inx_se),SummaryAmpli.Fano2_std(:,inx_se),...
+%     'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'MarkerFaceColor','auto');
+% plot(AmpLNA.a1,FanoB,'LineWidth',LineWidth)
+plot(AmpLNA.a1,Fano0B,'k-','LineWidth',LineWidth,'Color',colorSet(4,:))
 hold off
 axis([3,16,1,32])
-set(gca,'Xtick',3:2:16,'Ytick',[1,10,20],'YScale','log','LineWidth',1.5,'FontName','Helvetica','FontSize',28)
-xlabel('a1','FontSize',32,'FontName','Helvetica')
-ylabel('correlation coefficient of B','FontSize',32,'FontName','Helvetica')
+set(gca,'Xtick',3:2:16,'Ytick',[1,10,20],'YScale','log','LineWidth',ticketWidth,'FontName','Helvetica','FontSize',axisFontSize)
+xlabel('a1','FontSize',labelFontSize,'FontName','Helvetica')
+ylabel('Fano factor','FontSize',labelFontSize,'FontName','Helvetica')
 fileNameFanoPdf = [DataFolder,filesep,'GlpFano.pdf'];
 fileNameFanoFig = [DataFolder,filesep,'GlpFano.fig'];
 print('-dpdf',fileNameFanoPdf)
@@ -149,19 +172,44 @@ saveas(gcf,fileNameFanoFig)
 
 %% plot correlation coefficient
 figure(4)
-set(gcf,'Units','inches','Position',[0 0 8 6],...
+set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 hold on
-errorbar(SummaryAmpli.a1(:,inx_se), SummaryAmpli.corr(:,inx_se),SummaryAmpli.corr_std(:,inx_se),...
-    'o','MarkerSize',12,'LineWidth',1.5,'MarkerFaceColor','auto');
-plot(AmpLNA.a1,AmpLNA.corr(:,inx_se+1),'LineWidth',2)
-plot(AmpLNA.a1,AmpLNA.corr0,'k-','LineWidth',2)
+for i0 = 1:length(inx_se);
+    errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.corr(:,i0),SummaryAmpli.corr_std(:,i0),...
+    'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'Color',colorSet(i0,:),...
+    'MarkerFaceColor','auto');
+    plot(AmpLNA.a1,AmpLNA.corr(:,inx_se(i0)),'LineWidth',LineWidth,'Color',colorSet(i0,:))
+end
+plot(AmpLNA.a1,AmpLNA.corr0,'k-','LineWidth',LineWidth,'Color',colorSet(4,:))
 hold off
 axis([3,16,-1,0.4])
-set(gca,'Xtick',3:2:16,'LineWidth',1.5,'FontName','Helvetica','FontSize',28)
-xlabel('a1','FontSize',32,'FontName','Helvetica')
-ylabel('Fano factor of B','FontSize',32,'FontName','Helvetica')
+set(gca,'Xtick',3:2:16,'Ytick',-1:0.25:0.25,'LineWidth',ticketWidth,'FontName','Helvetica','FontSize',axisFontSize)
+xlabel('a1','FontSize',labelFontSize,'FontName','Helvetica')
+ylabel('correlation coeff','FontSize',labelFontSize,'FontName','Helvetica')
 fileNameCurrPdf = [DataFolder,filesep,'Glpcorr.pdf'];
 fileNameCurrFig = [DataFolder,filesep,'Glpcorr.fig'];
 print('-dpdf',fileNameCurrPdf)
 saveas(gcf,fileNameCurrFig)
+
+
+%% plot auto correlation coefficient
+figure(5)
+set(gcf,'Units','inches','Position',figureSize,...
+'PaperPositionMode','auto');
+hold on
+for i0 = 1:length(inx_se);
+    errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.lagAuto2(:,i0),SummaryAmpli.lagAuto2_std(:,i0),...
+        'o','MarkerSize',errorMarkerSize,'Color',colorSet(i0,:),'LineWidth',errorBarSize);
+    plot(AmpLNA.a1,AmpLNA.lagB(:,inx_se(i0)),'LineWidth',LineWidth,'Color',colorSet(i0,:))
+end
+plot(AmpLNA.a1,AmpLNA.lag0B,'k-','LineWidth',LineWidth,'Color',colorSet(4,:))
+hold off
+axis([3,16,0,1])
+set(gca,'Xtick',3:2:16,'YLim',[0.3,1],'LineWidth',ticketWidth,'FontName','Helvetica','FontSize',axisFontSize)
+xlabel('a1','FontSize',labelFontSize,'FontName','Helvetica')
+ylabel('autocorrelation coeff','FontSize',labelFontSize,'FontName','Helvetica')
+fileNameLagPdf = [DataFolder,filesep,'Glplag.pdf'];
+fileNameLagFig = [DataFolder,filesep,'Glplag.fig'];
+print('-dpdf',fileNameLagPdf)
+saveas(gcf,fileNameLagFig)
