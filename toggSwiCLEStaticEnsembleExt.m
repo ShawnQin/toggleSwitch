@@ -12,14 +12,15 @@ close all
 clear
 clc
 
-a1list = 10:0.5:13;
-sigmae = 0.1;
+a1list = 4:0.5:14;
+sigmae = 0.25;
 tauc = 100;
 % param = [15;10;2;2;0.03;tauc;sigmae];  %when the extrinsic noise terms are same
 %param = [15;10;2;2;0.03;1;sigmae;tauc;sigmae];  %when the extrinsic noise terms are different
-param = [15;10;2;2;0.05;1;1];  
-OMIGA = 50;        %system size
-NUM = 1e2;    %repeats times
+param = [15;10;2;2;0.03;1;1];   %modified 11/05/2016
+OMIGA = 20;        %system size
+NUM = 1e3;    %number of points to get
+TrialTimes = 2; % number of trials
 %runTime = max([20*tauc,1e3]);  %runing time
 whichone = 6;
 % test initial value 
@@ -27,11 +28,11 @@ whichone = 6;
 %y0 = [15;0];
 %intiVal = steadyInitial(OdePara,y0);
 
-varCorrCLEextEnsemble(param,a1list,NUM,OMIGA,sigmae,whichone);
+varCorrCLEextEnsemble(param,a1list,NUM,OMIGA,sigmae,whichone,TrialTimes);
 end
 
 %%
-function varCorrCLEextEnsemble(param,a1list,N,OMIGA,sigmae,whichone)
+function varCorrCLEextEnsemble(param,a1list,N,OMIGA,sigmae,whichone,TrialTimes)
 %this function simulate the variance, coefficient of correlation and
 %auto correlation
 
@@ -48,69 +49,87 @@ function varCorrCLEextEnsemble(param,a1list,N,OMIGA,sigmae,whichone)
 %declare some varibles use to store statistical quantities?
 steadyVal1 = nan(10*N,length(a1list));
 steadyVal2 = nan(10*N,length(a1list));
-meanVal = nan(length(a1list),2);
-variance = nan(length(a1list),2); 
-corrCLE = nan(length(a1list),1);
+meanVal = nan(length(a1list),2,TrialTimes);
+variance = nan(length(a1list),2,TrialTimes); 
+corrCLE = nan(length(a1list),TrialTimes);
 
 dt = 0.02;  %step size
-runTime = 20/param(6);  %the runining time is about 10 fold of degra
+runTime = 50/param(6);  %the runining time is about 10 fold of degradation rate
 OdePara = param; %this is the reference parameters
 y0 = [0,param(2)];
 
-for i0 = 1:length(a1list); %loop over control parameter
+for k0 = 1:TrialTimes
+    for i0 = 1:length(a1list); %loop over control parameter
     OdePara(1) = a1list(i0);
     
     %ensemble of extrinsic fluctuation
     %allExt = ParaExtEnsem(N,sigmae,param,whichone);
     MaxTry = 10;  %maximum number of try 
     
-    for j0 = 1:N
+        for j0 = 1:N
         count = 0;
         flag = 1;
         while(flag && count < MaxTry)
             OdePara(whichone) = ParaExtEnsem(1,sigmae,param,whichone);
-            OdePara(7) = OdePara(whichone);  % parameter 6 and 7 are bothe degradation rates
+            OdePara(7) = OdePara(whichone);  % parameter 6 and 7 are both degradation rates
             SteadyVal = FixedPoint(OdePara);
         if (size(SteadyVal,1)>1 || (size(SteadyVal,1)==1 && SteadyVal(2) > SteadyVal(1)))
-            flag = 0;
+%             flag = 0;
             if(size(SteadyVal,1)==1 && SteadyVal(2) > SteadyVal(1))  % could be two at the saddle point
                 HihgIniVal = SteadyVal*OMIGA;
+            elseif (size(SteadyVal,1)==2)
+                HihgIniVal = OMIGA*SteadyVal(1,:);
+                SaddleIniVal = OMIGA*SteadyVal(2,:);  %saddle point 
             else
                 HihgIniVal = OMIGA*SteadyVal(1,:);
                 LowIniVal = OMIGA*SteadyVal(3,:);    
                 SaddleIniVal = OMIGA*SteadyVal(2,:);  %saddle point         
             end
         end
-            count = count + 1;
-        end
+        
+        count = count + 1;
+        
             
         [time,Y] = CLEtoggleExtrinsic_diff(runTime,HihgIniVal*(1+0.05*randn),dt,OdePara,OMIGA);
-        plot(time,Y)
+%         plot(time,Y)
         % select 10 points in the trajectory before jump
-        if(size(SteadyVal,1)==1)
+        if(size(SteadyVal,1)==1)  %monostable
+            flag = 0;
             deltT = round(0.8*runTime/dt/10);
             selectedINX = round(runTime/dt):-deltT:round(0.2*runTime/dt); %index of selected 10 points
         elseif(Y(end,2) < SaddleIniVal(2) &&  Y(end,1) > SaddleIniVal(1)) %jumped to althernative state
             TurningPoint = find(Y(:,2) > SaddleIniVal(2), 1, 'last' );
-            selectedINX = randperm(TurningPoint,10);  %randomly select 10 data points before jumping
+            if(TurningPoint > 10)
+                flag = 0;
+                selectedINX = randperm(TurningPoint,10);  %randomly select 10 data points before jumping
+            else
+                selectedINX = 1:10;
+            end
+            
         elseif(Y(end,2) > SaddleIniVal(2) &&  Y(end,1) < SaddleIniVal(1)) % did not jumped to althernative state 
+            flag = 0;
             deltT = round(0.8*runTime/dt/10);
             selectedINX = round(runTime/dt):-deltT:round(0.2*runTime/dt); %index of selected 10 points
         end
         
+        end
+        
         Ys = Y(selectedINX,:);
         steadyVal1((j0-1)*10+1:j0*10,i0) = Ys(1:10,1);
-        steadyVal2((j0-1)*10+1:j0*10,i0) = Ys(1:10,2);        
-    end
-    meanVal(i0,:) = [mean(steadyVal1(:,i0)),mean(steadyVal2(:,i0))];
-    variance(i0,:) = [std(steadyVal1(:,i0)),std(steadyVal2(:,i0))];
+        steadyVal2((j0-1)*10+1:j0*10,i0) = Ys(1:10,2);
+ 
+        end
+    
+    meanVal(i0,:,k0) = [mean(steadyVal1(:,i0)),mean(steadyVal2(:,i0))];
+    variance(i0,:,k0) = [var(steadyVal1(:,i0)),var(steadyVal2(:,i0))];
     tempC = corrcoef(steadyVal1(:,i0),steadyVal2(:,i0));
-    corrCLE(i0) = tempC(2,1);
+    corrCLE(i0,k0) = tempC(2,1);
+    end
 end
 
 
- saveFile = ['togg_varCorr_CLE_','tau-',num2str(whichone),'_se',num2str(sigmae),'_N',num2str(OMIGA),'_',date,'.mat'];
- save(saveFile,'a1list','steadyVal1','steadyVal2','meanVal','variance','corrCLE')
+ saveFile = ['togg_CLE_ensemble','tau-',num2str(whichone),'_se',num2str(sigmae),'_N',num2str(OMIGA),'_',date,'.mat'];
+ save(saveFile,'a1list','meanVal','variance','corrCLE')
 
 %plot the results
 %     folder = '/media/M_fM__VM_0M_eM__JM__M_eM__MM_7/MATLAB/criticalityData';
@@ -392,7 +411,7 @@ function SteadyVal = FixedPoint(param)
     tauc2 = param(7);
     f1 = @(u,v) a1*(a0 + (1-a0)./(1+v.^n1)) - tauc1*u;
     f2 = @(u,v) a2*(a0 + (1-a0)./(1+u.^n2)) - tauc2*v;
-    PlotRange = [0,a1,0,a2];
+    PlotRange = [0,a1/param(6),0,a2/param(7)];
     g1=ezplot(f1,PlotRange);
     DataPoints1 = get(g1,'ContourMatrix');
     X1 = DataPoints1(1,2:end);
