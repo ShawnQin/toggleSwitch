@@ -1,6 +1,6 @@
 function toggSwiLNAExtri()
 % In this program, you can compare different source of extrinsic nosie
-%
+% current, only two sources can be specified
 
 % default parameters
 sigmae = 0.1;
@@ -9,8 +9,9 @@ param = [15;10;2;2;0.03;tauc;sigmae];
 OMIGA = 20;        %system size
 Yini = [0,10];
 % try different amplitude
-paraInx = [2,5];
-extrVal = [0.1,1000;0.1,1000];
+paraInx = 2;
+% extrVal = [0.1,1000;0.1,1000];
+extrVal = [0.1,10];
 % allTau = [1,10,100];
 
 
@@ -117,16 +118,22 @@ syms x y E E1 E2 a1 a2 a0 n1 n2 b1 b2 N
 
 if (length(paraInx)==1)
     switch paraInx
-        case {1,2}
+        case 1
             v1 = N*a1*(a0 + (1-a0)*(1+E1)/(1+(y/N)^n1));
+            beta1 = 1/param(6);
+        case 2
             v3 = N*a2*(a0 + (1-a0)*(1+E1)/(1+(x/N)^n2));
             beta1 = 1/param(6);
-        case {3,4}
+        case 3
             v1 = N*a1*(a0 + (1-a0)/(1+E1+(y/N)^n1));
+            beta1 = 1/param(6);
+        case 4
             v3 = N*a2*(a0 + (1-a0)/(1+E1+(x/N)^n2));
             beta1 = 1/param(6);
-        case {5,6}
+        case 5
             v2 = -(1 + E1)*x;
+            beta1 = 1/extrVal(2);
+        case 6      
             v4 = -(1 + E1)*y;
             beta1 = 1/extrVal(2);
         otherwise,
