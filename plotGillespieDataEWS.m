@@ -95,7 +95,7 @@ set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 
 hold on
-for i0 = 1:3;
+for i0 = 1:3
     errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.var2(:,i0),SummaryAmpli.var2_std(:,i0),...
     'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'Color',colorSet(i0,:),'MarkerFaceColor','auto');
     plot(AmpLNA.a1,AmpLNA.varB(:,inx_se(i0)),'LineWidth',LineWidth,'Color',colorSet(i0,:))
@@ -175,7 +175,7 @@ figure(4)
 set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 hold on
-for i0 = 1:length(inx_se);
+for i0 = 1:length(inx_se)
     errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.corr(:,i0),SummaryAmpli.corr_std(:,i0),...
     'o','MarkerSize',errorMarkerSize,'LineWidth',errorBarSize,'Color',colorSet(i0,:),...
     'MarkerFaceColor','auto');
@@ -198,7 +198,7 @@ figure(5)
 set(gcf,'Units','inches','Position',figureSize,...
 'PaperPositionMode','auto');
 hold on
-for i0 = 1:length(inx_se);
+for i0 = 1:length(inx_se)
     errorbar(SummaryAmpli.a1(:,i0), SummaryAmpli.lagAuto2(:,i0),SummaryAmpli.lagAuto2_std(:,i0),...
         'o','MarkerSize',errorMarkerSize,'Color',colorSet(i0,:),'LineWidth',errorBarSize);
     plot(AmpLNA.a1,AmpLNA.lagB(:,inx_se(i0)),'LineWidth',LineWidth,'Color',colorSet(i0,:))
