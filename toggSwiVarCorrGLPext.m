@@ -15,11 +15,11 @@ clc
 a1list = 4:0.5:15;
 sigmae = 0.1;
 tauc = 1;
-param = [15;10;2;2;0.05;tauc;sigmae];
+param = [15;10;2;2;0.03;tauc;sigmae];
 OMIGA = 20;        %system size
-NUM = 3;
-runTime = max([20*tauc,1e3]);
-% runTime = 50;
+NUM = 10;
+runTime = max([10*tauc,1e2]);
+
 
 varCorrGLPext(param,a1list,NUM,runTime,OMIGA);
 end
@@ -29,13 +29,15 @@ function varCorrGLPext(param,a1list,N,runTime,OMIGA)
     %auto correlation
     
 
-fileA = 'toggSwiBifurAll_A.csv';
-fileB = 'toggSwiBifurAll_B.csv';
+% fileA = 'toggSwiBifurAll_A.csv';
+% fileB = 'toggSwiBifurAll_B.csv';
+fileA = '/lustre1/tangc_pkuhpc/ssqin/toggleSwi/toggSwiBifurAll_A.csv';
+fileB = '/lustre1/tangc_pkuhpc/ssqin/toggleSwi/toggSwiBifurAll_B.csv';
 dataA = csvread(fileA);
 dataB = csvread(fileB);
 
 dt = 0.01;
-for j1 = 1:length(a1list);
+for j1 = 1:length(a1list)
     inx_h(j1) = find(dataB(:,1) ==a1list(j1));
 end
 high = round(OMIGA*[dataA(inx_h,2),dataB(inx_h,2)]);
@@ -53,17 +55,15 @@ lagAuto1 = nan(length(high),N);
 lagAuto2 = nan(length(high),N);
 % dataSelect = cell(length(high),N);
 
-for i0 = 1:length(a1list); 
+for i0 = 1:length(a1list) 
     param(1) = a1list(i0);
     n = 0;
     flag = 0;
     while(n<N && flag<MAXTRY)
         rng('shuffle')
-        tic;
-%         [time,Y] = GillespeBasalExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
-        
-        [time, Y] = ExtrandeExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
-        toc
+        [time,Y] = GillespeBasalExt(runTime,round(high(i0,:)'),param,OMIGA,dt);        
+%         [time, Y] = ExtrandeExt(runTime,round(high(i0,:)'),param,OMIGA,dt);
+
          if(param(1)<7 ||(param(1)>=7 && Y(end,1)<saddle(i0,1) && Y(end,2)>saddle(i0,2)))
             n = n+1;
 %             dataSelect{i0,n} = Y;
@@ -73,6 +73,7 @@ for i0 = 1:length(a1list);
             variance2(i0,n) = var(Y(:,2));
             C1 = corrcoef(Y(:,1),Y(:,2));
             corrCLE(i0,n) = C1(1,2);
+            
             
             C3 = corrcoef(Y(1:end-round(1/dt),1),Y(round(1/dt)+1:end,1));
             lagAuto1(i0,n) = C3(1,2);
@@ -85,7 +86,7 @@ for i0 = 1:length(a1list);
     end
 end
 
-saveFile = ['togg_varCorrLag_GLP_','tau-',num2str(param(6)),'_se',num2str(param(7)),'_N',num2str(OMIGA),'_',date,'.mat'];
+saveFile = ['togg_varCorrLag_GLP_','tau-',num2str(param(6)),'_se',num2str(param(7)),'_N',num2str(OMIGA),'.mat'];
 save(saveFile,'a1list','meanVal1','meanVal2','variance1','variance2','corrCLE','lagAuto1','lagAuto2')
 
 % %plot the results
@@ -155,7 +156,7 @@ Dext = sigmae*sqrt((1-mu^2)*tauc/2);
 Next = round(1.1*totTime/dt);
 Xtemp = 0;
 Xe = zeros(Next,1);
-for i1 = 1:Next;
+for i1 = 1:Next
     Xtemp = Xtemp*mu+ Dext*randn;
     if(Xtemp<-1)
         Xtemp=-1;  %avoid unreasonable value of extrinsic noise
@@ -178,20 +179,25 @@ while(t < totTime)
     if(t+tau<te)
         Ytemp = Ytemp + S(:,inx)';  
         t = t + tau;
-        Y = [Y;Ytemp];
-        timeY = [timeY;t];
+%         Y = [Y;Ytemp];
+%         timeY = [timeY;t];
 %         time(i+1)= t;
     else
 %         a1t = a1*(1+Xe(j+1));
 %         a2t = a2*(1+Xe(j+1));
-        b = 1+Xe(j+1);
+        Y = [Y;Ytemp];
+        timeY = [timeY;t];
+        
+        if (Xe(j+1) > -1)
+            b = 1+Xe(j+1);
+        else
+            b = 0;
+        end
         j = j+1;
         time(j) = t;
 %         Y(j,:) = Ytemp;  %only record part of the data
         t = te;
         te = te+dt;   %updata the extrinsic time point
-
-         
     end
     
 end
